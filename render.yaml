@@ -3,14 +3,18 @@ services:
     name: iplogger
     runtime: python
     plan: free
-    buildCommand: "./build.sh"
-    startCommand: "./start.sh"
+    buildCommand: "bash build.sh"
+    startCommand: "bash start.sh"
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.10"
       - key: DJANGO_DEBUG
         value: "False"
       - key: DJANGO_USE_SECURE_COOKIES
+        value: "False"
+      - key: DJANGO_FORCE_HTTPS
+        value: "False"
+      - key: DJANGO_USE_WHITENOISE
         value: "True"
       - key: DJANGO_TRUSTED_PROXY_HOPS
         value: "1"

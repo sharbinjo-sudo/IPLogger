@@ -84,6 +84,18 @@ Application URLs:
 - Admin: `http://127.0.0.1:8000/admin/`
 - Private IP dashboard: `http://127.0.0.1:8000/iplogs/`
 
+If your browser keeps trying HTTPS on port `8000`, use the local launcher instead:
+
+```powershell
+.\run-local.ps1
+```
+
+Then open:
+
+- Homepage: `http://127.0.0.1:8010/`
+- Admin: `http://127.0.0.1:8010/admin/`
+- Private IP dashboard: `http://127.0.0.1:8010/iplogs/`
+
 ## Creating the Admin Account Securely
 
 The setup credential supplied in the prompt should be treated as temporary and changed before any real deployment. Credentials that appear in prompts, shell history, screenshots, logs, or source control can be exposed.
@@ -207,8 +219,8 @@ Use these values in Render:
 
 If you configure the Render web service by hand:
 
-- Build command: `pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput`
-- Start command: `./start.sh`
+- Build command: `bash build.sh`
+- Start command: `bash start.sh`
 
 ### Neon database note
 
