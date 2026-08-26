@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.db import OperationalError
 from django.http import HttpResponse
 from django.test import RequestFactory
 from django.test import TestCase, override_settings
@@ -113,3 +114,35 @@ class ProxyIpTests(TestCase):
         self.assertEqual(response.status_code, 200)
         visitor = Visitor.objects.get()
         self.assertEqual(visitor.ip_address, "198.51.100.7")
+
+
+class MissingTableFallbackTests(TestCase):
+    def setUp(self) -> None:
+        self.factory = RequestFactory()
+        self.staff_user = User.objects.create_user(
+            username="fallback-staff@example.com",
+            email="fallback-staff@example.com",
+            password="safe-password-123",
+            is_staff=True,
+        )
+
+    def test_homepage_still_renders_when_visitor_table_is_unavailable(self) -> None:
+        request = self.factory.get(reverse("tracker:index"), REMOTE_ADDR="127.0.0.1")
+        with patch("tracker.views.visitor_storage_available", return_value=False):
+            response = views.index(request)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_dashboard_shows_empty_state_when_visitor_table_is_unavailable(self) -> None:
+        request = self.factory.get(reverse("tracker:iplogs"))
+        request.user = self.staff_user
+
+        with patch("tracker.views.visitor_storage_available", return_value=False):
+            with patch("tracker.views.render", return_value=HttpResponse("ok")) as mock_render:
+                response = views.iplogs(request)
+
+        self.assertEqual(response.status_code, 200)
+        context = mock_render.call_args.args[2]
+        self.assertFalse(context["database_ready"])
+        self.assertEqual(context["stats"]["total_visits"], 0)
+        self.assertEqual(len(context["page_obj"].object_list), 0)
