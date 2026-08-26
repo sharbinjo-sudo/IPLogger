@@ -204,7 +204,7 @@ Use these values in Render:
 If you configure the Render web service by hand:
 
 - Build command: `pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput`
-- Start command: `gunicorn iplogger.wsgi:application`
+- Start command: `./start.sh`
 
 ### Render database note
 

@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: "./build.sh"
-    startCommand: "gunicorn iplogger.wsgi:application"
+    startCommand: "./start.sh"
     envVars:
       - key: DJANGO_DEBUG
         value: "False"
