@@ -146,3 +146,21 @@ class MissingTableFallbackTests(TestCase):
         self.assertFalse(context["database_ready"])
         self.assertEqual(context["stats"]["total_visits"], 0)
         self.assertEqual(len(context["page_obj"].object_list), 0)
+
+    def test_dashboard_renders_fallback_when_auth_table_is_unavailable(self) -> None:
+        request = self.factory.get(reverse("tracker:iplogs"))
+        request.user = self.staff_user
+
+        with patch("tracker.views.auth_storage_available", return_value=False):
+            with patch("tracker.views.render", return_value=HttpResponse("ok")) as mock_render:
+                response = views.iplogs(request)
+
+        self.assertEqual(response.status_code, 200)
+        context = mock_render.call_args.args[2]
+        self.assertFalse(context["auth_ready"])
+        self.assertEqual(context["stats"]["total_visits"], 0)
+
+    def test_iplogs_alias_redirects_to_canonical_url(self) -> None:
+        response = self.client.get("/iplogd")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/iplogs/")

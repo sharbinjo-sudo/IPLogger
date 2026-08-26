@@ -181,6 +181,18 @@
         <h1>Visitor IP Dashboard</h1>
         <p>Staff-only view of recorded public IP addresses and user agents for site security and analytics.</p>
 
+        {% if not auth_ready %}
+            <section class="search-shell">
+                <p>The authentication tables are not available in this deployment yet, so staff sign-in and the protected dashboard are temporarily unavailable on this instance.</p>
+            </section>
+        {% endif %}
+
+        {% if auth_ready and not database_ready %}
+            <section class="search-shell">
+                <p>Authentication is available, but visitor log storage is not ready yet on this deployment. The dashboard is showing an empty fallback view.</p>
+            </section>
+        {% endif %}
+
         <section class="stats" aria-label="Dashboard statistics">
             <article class="card">
                 <div class="stat-label">Total Visits</div>
@@ -196,12 +208,14 @@
             </article>
         </section>
 
-        <section class="search-shell">
-            <form method="get">
-                <input type="search" name="q" value="{{ search_query }}" placeholder="Search by IP address">
-                <button type="submit">Search</button>
-            </form>
-        </section>
+        {% if auth_ready %}
+            <section class="search-shell">
+                <form method="get">
+                    <input type="search" name="q" value="{{ search_query }}" placeholder="Search by IP address">
+                    <button type="submit">Search</button>
+                </form>
+            </section>
+        {% endif %}
 
         <section class="table-shell">
             <div class="table-scroll">
@@ -239,7 +253,9 @@
             </div>
         </section>
 
-        <a class="secondary-link" href="/admin/">Open Django Admin</a>
+        {% if auth_ready %}
+            <a class="secondary-link" href="/admin/">Open Django Admin</a>
+        {% endif %}
     </main>
 </body>
 </html>

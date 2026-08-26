@@ -1,8 +1,9 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied
 from django.db import OperationalError, ProgrammingError
 from django.db.models import Count
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils import timezone
 
@@ -18,6 +19,14 @@ def visitor_storage_available() -> bool:
         return False
 
 
+def auth_storage_available() -> bool:
+    try:
+        get_user_model().objects.exists()
+        return True
+    except (OperationalError, ProgrammingError):
+        return False
+
+
 def index(request):
     if visitor_storage_available():
         Visitor.objects.create(
@@ -27,8 +36,25 @@ def index(request):
     return render(request, "tracker/index.html")
 
 
-@login_required(login_url="/admin/login/")
 def iplogs(request):
+    auth_ready = auth_storage_available()
+    if not auth_ready:
+        context = {
+            "page_obj": Paginator(Visitor.objects.none(), 20).get_page(request.GET.get("page")),
+            "search_query": request.GET.get("q", "").strip(),
+            "stats": {
+                "total_visits": 0,
+                "unique_ips": 0,
+                "todays_visits": 0,
+            },
+            "database_ready": False,
+            "auth_ready": False,
+        }
+        return render(request, "tracker/iplogs.html", context, status=200)
+
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(f"/admin/login/?next={request.path}")
+
     if not request.user.is_staff:
         raise PermissionDenied("Staff access is required.")
 
@@ -63,5 +89,10 @@ def iplogs(request):
         "search_query": search_query,
         "stats": stats,
         "database_ready": database_ready,
+        "auth_ready": True,
     }
     return render(request, "tracker/iplogs.html", context)
+
+
+def iplogs_alias_redirect(request):
+    return HttpResponseRedirect("/iplogs/")
