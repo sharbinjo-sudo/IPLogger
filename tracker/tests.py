@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.db import OperationalError
 from django.http import HttpResponse
 from django.test import RequestFactory
 from django.test import TestCase, override_settings
@@ -46,6 +45,27 @@ class TrackerViewTests(TestCase):
         visitor = Visitor.objects.get()
         self.assertEqual(visitor.ip_address, "127.0.0.42")
 
+    def test_repeated_ip_updates_existing_visitor_record(self) -> None:
+        first_request = self.factory.get(
+            reverse("tracker:index"),
+            REMOTE_ADDR="127.0.0.55",
+            HTTP_USER_AGENT="First browser",
+        )
+        second_request = self.factory.get(
+            reverse("tracker:index"),
+            REMOTE_ADDR="127.0.0.55",
+            HTTP_USER_AGENT="Latest browser",
+        )
+
+        views.index(first_request)
+        first_visited_at = Visitor.objects.get().visited_at
+        views.index(second_request)
+        visitor = Visitor.objects.get()
+
+        self.assertEqual(Visitor.objects.count(), 1)
+        self.assertEqual(visitor.user_agent, "Latest browser")
+        self.assertGreaterEqual(visitor.visited_at, first_visited_at)
+
     def test_anonymous_users_cannot_access_iplogs(self) -> None:
         response = self.client.get(reverse("tracker:iplogs"))
         self.assertEqual(response.status_code, 302)
@@ -77,7 +97,7 @@ class TrackerViewTests(TestCase):
 
     def test_dashboard_statistics_are_correct(self) -> None:
         Visitor.objects.create(ip_address="10.0.0.1", user_agent="UA 1")
-        Visitor.objects.create(ip_address="10.0.0.1", user_agent="UA 2")
+        Visitor.objects.create(ip_address="10.0.0.3", user_agent="UA 2")
         Visitor.objects.create(ip_address="10.0.0.2", user_agent="UA 3")
         request = self.factory.get(reverse("tracker:iplogs"))
         request.user = self.staff_user
@@ -86,7 +106,7 @@ class TrackerViewTests(TestCase):
 
         context = mock_render.call_args.args[2]
         self.assertEqual(context["stats"]["total_visits"], 3)
-        self.assertEqual(context["stats"]["unique_ips"], 2)
+        self.assertEqual(context["stats"]["unique_ips"], 3)
         self.assertEqual(context["stats"]["todays_visits"], 3)
 
     def test_search_by_ip_works(self) -> None:

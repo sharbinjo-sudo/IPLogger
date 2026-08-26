@@ -91,17 +91,11 @@ class Command(BaseCommand):
         synced = 0
         for row in rows:
             visited_at = self.parse_sqlite_datetime(row["visited_at"])
-            exists = Visitor.objects.filter(
+            visitor, _ = Visitor.objects.update_or_create(
                 ip_address=row["ip_address"],
-                user_agent=row["user_agent"],
-                visited_at=visited_at,
-            ).exists()
-            if exists:
-                continue
-
-            visitor = Visitor.objects.create(
-                ip_address=row["ip_address"],
-                user_agent=row["user_agent"],
+                defaults={
+                    "user_agent": row["user_agent"],
+                },
             )
             Visitor.objects.filter(pk=visitor.pk).update(visited_at=visited_at)
             synced += 1

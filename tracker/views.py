@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied
-from django.db import OperationalError, ProgrammingError
+from django.db import OperationalError, ProgrammingError, transaction
 from django.db.models import Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
@@ -27,12 +27,23 @@ def auth_storage_available() -> bool:
         return False
 
 
+def log_latest_visit(request) -> None:
+    ip_address = get_client_ip(request)
+    user_agent = request.META.get("HTTP_USER_AGENT", "")[:1000]
+
+    with transaction.atomic():
+        visitor, created = Visitor.objects.update_or_create(
+            ip_address=ip_address,
+            defaults={"user_agent": user_agent},
+        )
+        if not created:
+            visitor.visited_at = timezone.now()
+            visitor.save(update_fields=["user_agent", "visited_at"])
+
+
 def index(request):
     if visitor_storage_available():
-        Visitor.objects.create(
-            ip_address=get_client_ip(request),
-            user_agent=request.META.get("HTTP_USER_AGENT", "")[:1000],
-        )
+        log_latest_visit(request)
     return render(request, "tracker/index.html")
 
 
