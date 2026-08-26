@@ -5,8 +5,8 @@ from .models import Visitor
 
 @admin.register(Visitor)
 class VisitorAdmin(admin.ModelAdmin):
-    list_display = ("ip_address", "short_user_agent", "visited_at")
-    search_fields = ("ip_address", "user_agent")
+    list_display = ("ip_address", "connection_ip", "short_user_agent", "visited_at")
+    search_fields = ("ip_address", "connection_ip", "user_agent")
     ordering = ("-visited_at",)
     list_filter = ("visited_at",)
     date_hierarchy = "visited_at"

@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied
 from django.db import OperationalError, ProgrammingError, transaction
@@ -27,18 +28,31 @@ def auth_storage_available() -> bool:
         return False
 
 
+def should_ignore_user_agent(user_agent: str) -> bool:
+    ignored_keywords = getattr(settings, "IGNORED_USER_AGENT_KEYWORDS", [])
+    lowered_user_agent = user_agent.lower()
+    return any(keyword.lower() in lowered_user_agent for keyword in ignored_keywords)
+
+
 def log_latest_visit(request) -> None:
     ip_address = get_client_ip(request)
+    connection_ip = (request.META.get("REMOTE_ADDR") or "").strip() or None
     user_agent = request.META.get("HTTP_USER_AGENT", "")[:1000]
+    if should_ignore_user_agent(user_agent):
+        return
 
     with transaction.atomic():
         visitor, created = Visitor.objects.update_or_create(
             ip_address=ip_address,
-            defaults={"user_agent": user_agent},
+            defaults={
+                "connection_ip": connection_ip,
+                "user_agent": user_agent,
+            },
         )
         if not created:
+            visitor.connection_ip = connection_ip
             visitor.visited_at = timezone.now()
-            visitor.save(update_fields=["user_agent", "visited_at"])
+            visitor.save(update_fields=["connection_ip", "user_agent", "visited_at"])
 
 
 def index(request):

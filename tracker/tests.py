@@ -44,6 +44,18 @@ class TrackerViewTests(TestCase):
         views.index(request)
         visitor = Visitor.objects.get()
         self.assertEqual(visitor.ip_address, "127.0.0.42")
+        self.assertEqual(visitor.connection_ip, "127.0.0.42")
+
+    def test_ignored_uptime_robot_user_agent_is_not_recorded(self) -> None:
+        request = self.factory.get(
+            reverse("tracker:index"),
+            REMOTE_ADDR="127.0.0.88",
+            HTTP_USER_AGENT="Mozilla/5.0+(compatible; UptimeRobot/2.0; http://www.uptimerobot.com/)",
+        )
+        response = views.index(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Visitor.objects.count(), 0)
 
     def test_repeated_ip_updates_existing_visitor_record(self) -> None:
         first_request = self.factory.get(
@@ -63,6 +75,7 @@ class TrackerViewTests(TestCase):
         visitor = Visitor.objects.get()
 
         self.assertEqual(Visitor.objects.count(), 1)
+        self.assertEqual(visitor.connection_ip, "127.0.0.55")
         self.assertEqual(visitor.user_agent, "Latest browser")
         self.assertGreaterEqual(visitor.visited_at, first_visited_at)
 
@@ -134,6 +147,7 @@ class ProxyIpTests(TestCase):
         self.assertEqual(response.status_code, 200)
         visitor = Visitor.objects.get()
         self.assertEqual(visitor.ip_address, "8.8.4.4")
+        self.assertEqual(visitor.connection_ip, "10.10.10.10")
 
     @override_settings(TRUSTED_PROXY_HOPS=1)
     def test_trusted_proxy_prefers_first_public_forwarded_ip(self) -> None:

@@ -222,7 +222,8 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>IP Address</th>
+                            <th>Public IP Address</th>
+                            <th>Connection IP</th>
                             <th>User Agent</th>
                             <th>Visited At</th>
                         </tr>
@@ -231,12 +232,13 @@
                         {% for visitor in page_obj %}
                             <tr>
                                 <td>{{ visitor.ip_address }}</td>
+                                <td>{{ visitor.connection_ip|default:"-" }}</td>
                                 <td class="ua">{{ visitor.user_agent|default:"-" }}</td>
                                 <td>{{ visitor.visited_at|date:"M d, Y H:i" }}</td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td class="empty" colspan="3">No visitor records match the current filter.</td>
+                                <td class="empty" colspan="4">No visitor records match the current filter.</td>
                             </tr>
                         {% endfor %}
                     </tbody>

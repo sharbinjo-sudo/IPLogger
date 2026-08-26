@@ -94,6 +94,7 @@ class Command(BaseCommand):
             visitor, _ = Visitor.objects.update_or_create(
                 ip_address=row["ip_address"],
                 defaults={
+                    "connection_ip": row["ip_address"],
                     "user_agent": row["user_agent"],
                 },
             )
