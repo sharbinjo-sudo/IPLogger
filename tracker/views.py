@@ -8,7 +8,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils import timezone
 
-from .ip_utils import get_client_ip
+from .ip_utils import get_client_ip, is_public_ip
 from .models import Visitor
 
 
@@ -39,6 +39,8 @@ def log_latest_visit(request) -> None:
     connection_ip = (request.META.get("REMOTE_ADDR") or "").strip() or None
     user_agent = request.META.get("HTTP_USER_AGENT", "")[:1000]
     if should_ignore_user_agent(user_agent):
+        return
+    if getattr(settings, "TRUSTED_PROXY_HOPS", 0) > 0 and not is_public_ip(ip_address):
         return
 
     with transaction.atomic():

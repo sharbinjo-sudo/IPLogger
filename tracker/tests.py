@@ -189,6 +189,18 @@ class ProxyIpTests(TestCase):
         visitor = Visitor.objects.get()
         self.assertEqual(visitor.ip_address, "127.0.0.1")
 
+    @override_settings(TRUSTED_PROXY_HOPS=1)
+    def test_proxy_mode_does_not_record_loopback_as_public_ip(self) -> None:
+        request = RequestFactory().get(
+            reverse("tracker:index"),
+            REMOTE_ADDR="127.0.0.1",
+            HTTP_X_FORWARDED_FOR="127.0.0.1, 10.0.0.1",
+        )
+        response = views.index(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Visitor.objects.count(), 0)
+
 
 class MissingTableFallbackTests(TestCase):
     def setUp(self) -> None:
