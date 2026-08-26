@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome</title>
+    <style>
+        :root {
+            --bg: #f4efe7;
+            --panel: rgba(255, 252, 247, 0.9);
+            --ink: #1f2933;
+            --muted: #52606d;
+            --accent: #c2410c;
+            --accent-soft: #fdba74;
+            --ring: rgba(194, 65, 12, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(253, 186, 116, 0.55), transparent 35%),
+                radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.35), transparent 30%),
+                linear-gradient(135deg, #f7f3eb 0%, #efe6da 45%, #e8dccd 100%);
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+
+        .shell {
+            width: min(920px, 100%);
+            background: var(--panel);
+            border: 1px solid rgba(82, 96, 109, 0.12);
+            border-radius: 28px;
+            padding: 40px;
+            box-shadow: 0 24px 60px rgba(31, 41, 51, 0.12);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: translateY(24px);
+            animation: rise 0.8s ease forwards;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(253, 186, 116, 0.22);
+            color: var(--accent);
+            font-size: 0.92rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 22px 0 14px;
+            font-size: clamp(2.4rem, 7vw, 4.9rem);
+            line-height: 0.98;
+        }
+
+        p {
+            margin: 0 0 16px;
+            max-width: 42rem;
+            font-size: 1.08rem;
+            line-height: 1.7;
+            color: var(--muted);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 26px;
+        }
+
+        button,
+        .time-chip {
+            border: 0;
+            border-radius: 999px;
+            padding: 14px 18px;
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+            background: var(--ink);
+            color: #fff;
+            box-shadow: 0 12px 24px var(--ring);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        button:hover,
+        button:focus-visible {
+            background: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 16px 28px rgba(194, 65, 12, 0.22);
+            outline: none;
+        }
+
+        .time-chip {
+            background: rgba(31, 41, 51, 0.06);
+            color: var(--ink);
+        }
+
+        .note {
+            margin-top: 28px;
+            padding: 18px 20px;
+            border-left: 4px solid var(--accent);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.58);
+        }
+
+        @keyframes rise {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .shell {
+                padding: 28px 22px;
+                border-radius: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <div class="eyebrow">Public Homepage</div>
+        <h1>Hello, this is my website 👋</h1>
+        <p>Thanks for visiting.</p>
+        <div class="actions">
+            <button id="helloButton" type="button">Say hello</button>
+            <div class="time-chip" id="browserTime" aria-live="polite">Loading your local time...</div>
+        </div>
+        <div class="note" id="messageBox">
+            This page uses only client-side JavaScript for presentation.
+        </div>
+    </main>
+    <script>
+        const timeEl = document.getElementById("browserTime");
+        const buttonEl = document.getElementById("helloButton");
+        const messageEl = document.getElementById("messageBox");
+
+        function refreshTime() {
+            const now = new Date();
+            timeEl.textContent = `Your browser time: ${now.toLocaleTimeString()}`;
+        }
+
+        refreshTime();
+        window.setInterval(refreshTime, 1000);
+
+        buttonEl.addEventListener("click", () => {
+            messageEl.textContent = "Hope you're having a great day. Thanks for stopping by.";
+        });
+    </script>
+</body>
+</html>
