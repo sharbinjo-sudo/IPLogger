@@ -6,6 +6,8 @@ services:
     buildCommand: "./build.sh"
     startCommand: "./start.sh"
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.10"
       - key: DJANGO_DEBUG
         value: "False"
       - key: DJANGO_USE_SECURE_COOKIES
@@ -19,9 +21,4 @@ services:
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        fromDatabase:
-          name: iplogger-db
-          property: connectionString
-databases:
-  - name: iplogger-db
-    plan: free
+        sync: false

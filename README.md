@@ -177,7 +177,9 @@ This project is now prepared for Render with:
 - `build.sh` for migrations and static collection during build
 - `gunicorn` as the process Render runs
 - `whitenoise` for serving collected static files
-- `dj-database-url` so Render PostgreSQL can be configured from `DATABASE_URL`
+- `dj-database-url` so PostgreSQL can be configured from `DATABASE_URL`
+- `psycopg` so Django can actually connect to PostgreSQL providers such as Neon
+- `.python-version` so Render uses Python 3.12 instead of the newer 3.14 default
 
 ### Render environment variables
 
@@ -189,15 +191,17 @@ Use these values in Render:
 - `DJANGO_ALLOWED_HOSTS=your-service-name.onrender.com`
 - `DJANGO_CSRF_TRUSTED_ORIGINS=https://your-service-name.onrender.com`
 - `DJANGO_SECRET_KEY` as a generated secret
-- `DATABASE_URL` from your Render PostgreSQL database
+- `DATABASE_URL` from your Neon database
 
 ### Render deploy steps
 
 1. Push this repo to GitHub.
-2. Create a new Render Blueprint from the repository, or create a web service manually.
-3. If using the included `render.yaml`, let Render provision both the web service and PostgreSQL database.
-4. Confirm the final Render domain and keep `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` aligned with it.
-5. After deploy, create or verify your staff account without deleting existing superusers.
+2. Create a Neon Postgres database and copy its connection string.
+3. In Neon, use a pooled connection string and keep the `?sslmode=require&channel_binding=require` parameters Neon includes by default.
+4. Create a new Render Blueprint from the repository, or create a web service manually.
+5. Set `DATABASE_URL` in Render to the Neon connection string.
+6. Confirm the final Render domain and keep `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` aligned with it.
+7. After deploy, create or verify your staff account without deleting existing superusers.
 
 ### Manual Render commands
 
@@ -206,9 +210,9 @@ If you configure the Render web service by hand:
 - Build command: `pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput`
 - Start command: `./start.sh`
 
-### Render database note
+### Neon database note
 
-Render's filesystem is not suitable for durable SQLite production storage. This project now reads `DATABASE_URL`, so a managed Render PostgreSQL database should be used in production.
+Neon requires TLS. Its current docs show connection strings like `postgresql://...neon.tech/...?...sslmode=require&channel_binding=require`, and its Django guidance recommends using `psycopg` with SSL enabled. Render supports connecting to an external Postgres database via a standard `DATABASE_URL`, so Neon is a workable replacement for Render Postgres on a free web service. The remaining requirement is that Django migrations must run at least once against that Neon database so `auth_user`, `django_session`, and `tracker_visitor` are created.
 
 ### Suggested production workflow
 
