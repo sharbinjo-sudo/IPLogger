@@ -108,12 +108,52 @@ class ProxyIpTests(TestCase):
         request = RequestFactory().get(
             reverse("tracker:index"),
             REMOTE_ADDR="10.10.10.10",
-            HTTP_X_FORWARDED_FOR="198.51.100.7",
+            HTTP_X_FORWARDED_FOR="8.8.4.4",
         )
         response = views.index(request)
         self.assertEqual(response.status_code, 200)
         visitor = Visitor.objects.get()
-        self.assertEqual(visitor.ip_address, "198.51.100.7")
+        self.assertEqual(visitor.ip_address, "8.8.4.4")
+
+    @override_settings(TRUSTED_PROXY_HOPS=1)
+    def test_trusted_proxy_prefers_first_public_forwarded_ip(self) -> None:
+        request = RequestFactory().get(
+            reverse("tracker:index"),
+            REMOTE_ADDR="127.0.0.1",
+            HTTP_X_FORWARDED_FOR="9.9.9.9, 10.0.0.10, 127.0.0.1",
+        )
+        response = views.index(request)
+
+        self.assertEqual(response.status_code, 200)
+        visitor = Visitor.objects.get()
+        self.assertEqual(visitor.ip_address, "9.9.9.9")
+
+    @override_settings(TRUSTED_PROXY_HOPS=1)
+    def test_trusted_proxy_uses_cloudflare_connecting_ip(self) -> None:
+        request = RequestFactory().get(
+            reverse("tracker:index"),
+            REMOTE_ADDR="127.0.0.1",
+            HTTP_CF_CONNECTING_IP="8.8.8.8",
+            HTTP_X_FORWARDED_FOR="1.1.1.1",
+        )
+        response = views.index(request)
+
+        self.assertEqual(response.status_code, 200)
+        visitor = Visitor.objects.get()
+        self.assertEqual(visitor.ip_address, "8.8.8.8")
+
+    @override_settings(TRUSTED_PROXY_HOPS=0)
+    def test_local_development_uses_remote_addr(self) -> None:
+        request = RequestFactory().get(
+            reverse("tracker:index"),
+            REMOTE_ADDR="127.0.0.1",
+            HTTP_X_FORWARDED_FOR="8.8.8.8",
+        )
+        response = views.index(request)
+
+        self.assertEqual(response.status_code, 200)
+        visitor = Visitor.objects.get()
+        self.assertEqual(visitor.ip_address, "127.0.0.1")
 
 
 class MissingTableFallbackTests(TestCase):
